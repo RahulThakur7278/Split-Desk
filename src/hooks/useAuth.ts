@@ -1,17 +1,59 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
-import { loginUser, getCurrentUser } from '../services/auth.service';
-import { refreshToken as refreshTokenService } from '../services/auth.service';
+import { loginUser, getCurrentUser, refreshToken as refreshTokenService } from '../services/auth.service';
 import { useAuthStore } from '../stores/auth.store';
 import { useToast } from './useToast';
 import type { LoginRequest } from '../types/api';
 
 /**
- * Authentication hook providing login, logout, and session management.
- *
- * Combines TanStack Query for server-state (login mutation, user query)
- * with Zustand for client-state (tokens, auth status).
+ * Validates existing session on app startup when Remember Me is enabled.
+ * Designed to be called at the root component level (AuthInitializer).
+ */
+export function useAuthInitializer() {
+  const { setLoading, setTokens, setUser, logout: clearAuthState } = useAuthStore();
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  useQuery({
+    queryKey: ['auth', 'session'],
+    queryFn: async () => {
+      const { refreshToken, rememberMe, user: persistedUser } = useAuthStore.getState();
+
+      if (!refreshToken || !rememberMe) {
+        clearAuthState();
+        setLoading(false);
+        return null;
+      }
+
+      try {
+        const tokens = await refreshTokenService(refreshToken);
+        setTokens(tokens.accessToken, tokens.refreshToken);
+
+        try {
+          const currentUser = await getCurrentUser();
+          setUser(currentUser);
+        } catch {
+          if (persistedUser) {
+            setUser(persistedUser);
+          }
+        }
+        setLoading(false);
+        return tokens;
+      } catch (err) {
+        console.warn('Session refresh failed:', err);
+        clearAuthState();
+        setLoading(false);
+        return null;
+      }
+    },
+    enabled: isLoading,
+    retry: false,
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Authentication hook providing login, logout, and session status.
  */
 export function useAuth() {
   const navigate = useNavigate();
@@ -49,38 +91,9 @@ export function useAuth() {
     },
   });
 
-  /** Validates existing session on app startup */
-  const sessionQuery = useQuery({
-    queryKey: ['auth', 'session'],
-    queryFn: async () => {
-      const { refreshToken, rememberMe } = useAuthStore.getState();
-
-      if (!refreshToken || !rememberMe) {
-        clearAuthState();
-        return null;
-      }
-
-      try {
-        const tokens = await refreshTokenService(refreshToken);
-        setTokens(tokens.accessToken, tokens.refreshToken);
-
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-        setLoading(false);
-        return currentUser;
-      } catch {
-        clearAuthState();
-        return null;
-      }
-    },
-    enabled: isLoading,
-    retry: false,
-    staleTime: Infinity,
-  });
-
   /** Handles login with optional remember me */
   const login = useCallback(
-    (username: string, password: string, rememberMe: boolean = false) => {
+    (username: string, password: string, rememberMe: boolean = true) => {
       setRememberMe(rememberMe);
       loginMutation.mutate({ username, password });
     },
@@ -96,7 +109,7 @@ export function useAuth() {
   return {
     user,
     isAuthenticated,
-    isLoading: isLoading && sessionQuery.isLoading,
+    isLoading,
     login,
     logout,
     loginError: loginMutation.error,

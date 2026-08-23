@@ -171,9 +171,9 @@ const BoardPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-7xl mx-auto">
         <div className="h-10 w-48 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse" />
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex gap-4 overflow-x-auto pb-4 justify-start md:justify-center">
           {[1, 2, 3, 4].map((i) => (
             <BoardColumnSkeleton key={i} />
           ))}
@@ -183,7 +183,7 @@ const BoardPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 max-w-full">
+    <div className="space-y-4 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -245,7 +245,7 @@ const BoardPage: React.FC = () => {
         onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 lg:mx-0 lg:px-0">
+        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 justify-start md:justify-center">
           {COLUMNS.map((column) => (
             <KanbanColumn
               key={column.id}
