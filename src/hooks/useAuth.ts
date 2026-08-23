@@ -1,10 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
-import { loginUser, getCurrentUser, refreshToken as refreshTokenService } from '../services/auth.service';
+import { loginUser, registerUser, getCurrentUser, refreshToken as refreshTokenService } from '../services/auth.service';
 import { useAuthStore } from '../stores/auth.store';
 import { useToast } from './useToast';
-import type { LoginRequest } from '../types/api';
+import type { LoginRequest, RegisterRequest } from '../types/api';
 
 /**
  * Validates existing session on app startup when Remember Me is enabled.
@@ -53,11 +53,11 @@ export function useAuthInitializer() {
 }
 
 /**
- * Authentication hook providing login, logout, and session status.
+ * Authentication hook providing login, registration, logout, and session status.
  */
 export function useAuth() {
   const navigate = useNavigate();
-  const { error: showError } = useToast();
+  const { error: showError, success: showSuccess, info: showInfo } = useToast();
   const {
     user,
     isAuthenticated,
@@ -84,10 +84,37 @@ export function useAuth() {
         image: data.image,
       });
       setLoading(false);
+      showSuccess('Login successful!', `Welcome back, ${data.firstName}!`);
       navigate('/dashboard');
     },
     onError: () => {
       showError('Login failed', 'Invalid username or password. Please try again.');
+    },
+  });
+
+  /** Registration mutation */
+  const registerMutation = useMutation({
+    mutationFn: (data: RegisterRequest) => registerUser(data),
+    onSuccess: (data) => {
+      const mockAccessToken = `registered-token-${data.id}-${Date.now()}`;
+      const mockRefreshToken = `registered-refresh-${data.id}-${Date.now()}`;
+      setRememberMe(true);
+      setTokens(mockAccessToken, mockRefreshToken);
+      setUser({
+        id: data.id,
+        username: data.username,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        gender: 'neutral',
+        image: `https://dummyjson.com/icon/${data.username}/128`,
+      });
+      setLoading(false);
+      showSuccess('Account created!', `Welcome to SprintDesk, ${data.firstName}!`);
+      navigate('/dashboard');
+    },
+    onError: () => {
+      showError('Registration failed', 'Could not create account. Please try again.');
     },
   });
 
@@ -100,19 +127,31 @@ export function useAuth() {
     [loginMutation, setRememberMe]
   );
 
+  /** Handles registration */
+  const register = useCallback(
+    (data: RegisterRequest) => {
+      registerMutation.mutate(data);
+    },
+    [registerMutation]
+  );
+
   /** Handles logout with state cleanup and navigation */
   const logout = useCallback(() => {
     clearAuthState();
+    showInfo('Logged out', 'You have been signed out.');
     navigate('/login');
-  }, [clearAuthState, navigate]);
+  }, [clearAuthState, navigate, showInfo]);
 
   return {
     user,
     isAuthenticated,
     isLoading,
     login,
+    register,
     logout,
     loginError: loginMutation.error,
+    registerError: registerMutation.error,
     isLoginPending: loginMutation.isPending,
+    isRegisterPending: registerMutation.isPending,
   };
 }

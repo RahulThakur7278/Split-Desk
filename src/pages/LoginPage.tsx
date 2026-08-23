@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/ui/Button';
 
@@ -14,8 +15,8 @@ import Button from '../components/ui/Button';
  */
 const LoginPage: React.FC = () => {
   const { login, isLoginPending } = useAuth();
-  const [username, setUsername] = useState('emilys');
-  const [password, setPassword] = useState('emilyspass');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -146,9 +147,8 @@ const LoginPage: React.FC = () => {
                     {[1, 2, 3, 4, 5].map((level) => (
                       <div
                         key={level}
-                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                          level <= passwordStrength.score ? passwordStrength.color : 'bg-white/10'
-                        }`}
+                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${level <= passwordStrength.score ? passwordStrength.color : 'bg-white/10'
+                          }`}
                       />
                     ))}
                   </div>
@@ -190,6 +190,16 @@ const LoginPage: React.FC = () => {
               <span>Username: <code className="text-indigo-300">emilys</code></span>
               <span>Password: <code className="text-indigo-300">emilyspass</code></span>
             </div>
+          </div>
+
+          {/* Link to Registration page */}
+          <div className="mt-4 text-center border-t border-white/10 pt-4">
+            <p className="text-xs text-slate-300">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-indigo-300 font-semibold hover:text-indigo-200 underline">
+                Sign Up
+              </Link>
+            </p>
           </div>
         </div>
       </div>
