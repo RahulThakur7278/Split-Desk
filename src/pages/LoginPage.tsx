@@ -16,7 +16,7 @@ const LoginPage: React.FC = () => {
   const { login, isLoginPending } = useAuth();
   const [username, setUsername] = useState('emilys');
   const [password, setPassword] = useState('emilyspass');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
