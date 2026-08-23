@@ -18,6 +18,22 @@ export interface LoginResponse {
   refreshToken: string;
 }
 
+export interface RegisterRequest {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface RegisterResponse {
+  id: number;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+}
+
 export interface RefreshTokenRequest {
   refreshToken: string;
   expiresInMins?: number;
